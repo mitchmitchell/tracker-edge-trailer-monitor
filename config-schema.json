@@ -312,6 +312,167 @@
 				}
 			}
 		},
+		"env_trig": {
+			"$id": "#/properties/env_trig",
+			"type": "object",
+			"title": "Environment",
+			"description": "Configuration for external temperature and humidity thresholding.",
+			"default": {},
+			"properties": {
+				"envhigh": {
+					"$id": "#/properties/env_trig/envhigh",
+					"type": "number",
+					"title": "High temperature threshold (Celsius)",
+					"description": "Publish location once if temperature is greater than or equal to threshold. The temperature will be required to be less than the high threshold minus hysteresis to clear event, when latching, or publish again when latching disabled.  Hysteresis must be valid.",
+					"default": 150.0,
+					"examples": [
+						65.0
+					],
+					"minimum": -40.0,
+					"maximum": 150.0
+				},
+				"envhigh_en": {
+					"$id": "#/properties/env_trig/envhigh_en",
+					"type": "boolean",
+					"title": "High temperature monitoring",
+					"description": "If enabled, compare current temperature against high threshold.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"envhigh_latch": {
+					"$id": "#/properties/env_trig/envhigh_latch",
+					"type": "boolean",
+					"title": "High temperature event latching.",
+					"description": "Enable latching of high temperature trigger event until temperature has fallen below hysteresis level; otherwise, generate one high temperature event.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"envlow": {
+					"$id": "#/properties/env_trig/envlow",
+					"type": "number",
+					"title": "Low temperature threshold (Celsius)",
+					"description": "Publish location once if temperature is less than or equal to threshold. The temperature will be required to be more than the low threshold plus hysteresis to clear event, when latching, or publish again when latching disabled. Hysteresis must be valid.",
+					"default": -40.0,
+					"examples": [
+						0.0
+					],
+					"minimum": -40.0,
+					"maximum": 150.0
+				},
+				"envlow_en": {
+					"$id": "#/properties/env_trig/envlow_en",
+					"type": "boolean",
+					"title": "Low temperature monitoring.",
+					"description": "If enabled, compare current temperature against low threshold.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"envlow_latch": {
+					"$id": "#/properties/env_trig/envlow_latch",
+					"type": "boolean",
+					"title": "Low temperature event latching.",
+					"description": "Enable latching of low temperature trigger event until temperature has risen above hysteresis level; otherwise, generate one low temperature event.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"envhyst": {
+					"$id": "#/properties/env_trig/envhyst",
+					"type": "number",
+					"title": "Hysteresis temperature threshold (Celsius)",
+					"description": "Hysteresis threshold applied to high and low thresholds to allow further temperature publishes. 0.0 for unused.",
+					"default": 0.0,
+					"examples": [
+						10.0
+					],
+					"minimum": 0.0,
+					"maximum": 190.0
+				},
+				"humhigh": {
+					"$id": "#/properties/env_trig/humhigh",
+					"type": "number",
+					"title": "High humidity threshold (Percent)",
+					"description": "Publish location once if humidity is greater than or equal to threshold. The humidity will be required to be less than the high threshold minus hysteresis to clear event, when latching, or publish again when latching disabled.  Hysteresis must be valid.",
+					"default": 90.0,
+					"examples": [
+						65.0
+					],
+					"minimum": 0.0,
+					"maximum": 100.0
+				},
+				"humhigh_en": {
+					"$id": "#/properties/env_trig/humhigh_en",
+					"type": "boolean",
+					"title": "High humidity monitoring",
+					"description": "If enabled, compare current humidity against high threshold.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"humhigh_latch": {
+					"$id": "#/properties/env_trig/humhigh_latch",
+					"type": "boolean",
+					"title": "High humidity event latching.",
+					"description": "Enable latching of high humidity trigger event until humidity has fallen below hysteresis level; otherwise, generate one high humidity event.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"humlow": {
+					"$id": "#/properties/env_trig/humlow",
+					"type": "number",
+					"title": "Low humidity threshold (Percent)",
+					"description": "Publish location once if humidity is less than or equal to threshold. The humidity will be required to be more than the low threshold plus hysteresis to clear event, when latching, or publish again when latching disabled. Hysteresis must be valid.",
+					"default": 10.0,
+					"examples": [
+						0.0
+					],
+					"minimum": 0.0,
+					"maximum": 100.0
+				},
+				"humlow_en": {
+					"$id": "#/properties/env_trig/humlow_en",
+					"type": "boolean",
+					"title": "Low humidity monitoring.",
+					"description": "If enabled, compare current humidity against low threshold.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"humlow_latch": {
+					"$id": "#/properties/env_trig/humlow_latch",
+					"type": "boolean",
+					"title": "Low humidity event latching.",
+					"description": "Enable latching of low humidity trigger event until humidity has risen above hysteresis level; otherwise, generate one low humidity event.",
+					"default": false,
+					"examples": [
+						true
+					]
+				},
+				"humhyst": {
+					"$id": "#/properties/env_trig/humhyst",
+					"type": "number",
+					"title": "Hysteresis humidity threshold (Percent)",
+					"description": "Hysteresis threshold applied to high and low thresholds to allow further humidity publishes. 0.0 for unused.",
+					"default": 0.0,
+					"examples": [
+						10.0
+					],
+					"minimum": 0.0,
+					"maximum": 100.0
+				}
+			}
+		},
 		"rgb": {
 			"$id": "#/properties/rgb",
 			"type": "object",

@@ -18,6 +18,8 @@
 
 #include "tracker_config.h"
 #include "tracker.h"
+#include "environment.h"
+#include "sht3x-i2c.h"
 
 SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -38,12 +40,118 @@ SerialLogHandler logHandler(115200, LOG_LEVEL_TRACE, {
     { "net.ppp.client", LOG_LEVEL_INFO },
 });
 
+Sht3xi2c sensor(Wire3);
+
+void loc_gen_cb(JSONWriter &writer, LocationPoint &point, const void *context)
+{
+    Environment env = get_environment();
+    
+    writer.name("env_t").value(env.Temperature);
+    writer.name("env_h").value(env.Humidity);
+ 
+    int ps = System.powerSource();
+
+    writer.name("pwr").value(ps);
+}
+
+bool powerState()
+{
+    static bool oldPowerState = true; // assume we boot up with power connected -- we'll complain as soon as we know different
+    bool newPowerState = false;
+    power_source_t ps = (power_source_t)System.powerSource();
+
+    switch(ps) {
+        case POWER_SOURCE_VIN:
+        case POWER_SOURCE_USB_HOST:
+        case POWER_SOURCE_USB_ADAPTER:
+        case POWER_SOURCE_USB_OTG: {
+            newPowerState = true;
+            break;
+        }
+        
+        case POWER_SOURCE_UNKNOWN:
+        case POWER_SOURCE_BATTERY:
+        default: {
+            newPowerState = false;
+            break;
+        }
+
+    }
+
+    if (oldPowerState != newPowerState) {
+        Tracker::instance().location.triggerLocPub(Trigger::IMMEDIATE,(oldPowerState == true ? "pwr_l" : "pwr_r"));
+        oldPowerState = newPowerState;
+    }
+ 
+    return oldPowerState;
+};
+
+void envState()
+{
+    if (environment_high_temperature_events())
+    {
+        Tracker::instance().location.triggerLocPub(Trigger::NORMAL,"envtemp_h");
+    }
+
+    if (environment_low_temperature_events())
+    {
+        Tracker::instance().location.triggerLocPub(Trigger::NORMAL,"envtemp_l");
+    }
+    if (environment_high_humidity_events())
+    {
+        Tracker::instance().location.triggerLocPub(Trigger::NORMAL,"envhum_h");
+    }
+
+    if (environment_low_humidity_events())
+    {
+        Tracker::instance().location.triggerLocPub(Trigger::NORMAL,"envhum_l");
+    }
+}
+
+Environment get_environment() {
+    static Environment results = {-476.0l,-1.0l};
+    static uint32_t update_loop_sec = 0;
+
+    //don't poll the sensor too often
+    if((System.uptime() - update_loop_sec) >= 2) {
+        double temp, humid;
+        int err = sensor.get_reading(&temp, &humid);
+        if (err == 0)
+        {
+            Log.info("temp=%.2lf hum=%.2lf", temp, humid);
+            results = { temp, humid };
+        }
+        else {
+            Log.info("no sensor err=%d", err);
+        }
+        update_loop_sec = System.uptime();
+    }
+    return results;
+}
+
 void setup()
 {
     Tracker::instance().init();
+
+    // Register a location callback so we can add temperature and humidity information
+    // to location publishes
+    Tracker::instance().location.regLocGenCallback(loc_gen_cb);
+    
+    // Turn on 5V output on M8 connector
+    pinMode(CAN_PWR, OUTPUT);
+    digitalWrite(CAN_PWR, HIGH);
+    delay(500);
+
+    sensor.begin();
+    sensor.start_periodic();
+
+    environment_init();
 }
 
 void loop()
 {
+    environment_tick();
+    envState();
+    powerState();
     Tracker::instance().loop();
 }

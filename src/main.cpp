@@ -19,7 +19,7 @@
 #include "tracker_config.h"
 #include "tracker.h"
 #include "environment.h"
-#include "sht3x-i2c.h"
+
 
 SYSTEM_THREAD(ENABLED);
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -39,8 +39,6 @@ SerialLogHandler logHandler(115200, LOG_LEVEL_TRACE, {
     { "ncp.at", LOG_LEVEL_INFO },
     { "net.ppp.client", LOG_LEVEL_INFO },
 });
-
-Sht3xi2c sensor(Wire3);
 
 void loc_gen_cb(JSONWriter &writer, LocationPoint &point, const void *context)
 {
@@ -108,27 +106,6 @@ void envState()
     }
 }
 
-Environment get_environment() {
-    static Environment results = {-476.0l,-1.0l};
-    static uint32_t update_loop_sec = 0;
-
-    //don't poll the sensor too often
-    if((System.uptime() - update_loop_sec) >= 2) {
-        double temp, humid;
-        int err = sensor.get_reading(&temp, &humid);
-        if (err == 0)
-        {
-            Log.info("temp=%.2lf hum=%.2lf", temp, humid);
-            results = { temp, humid };
-        }
-        else {
-            Log.info("no sensor err=%d", err);
-        }
-        update_loop_sec = System.uptime();
-    }
-    return results;
-}
-
 void setup()
 {
     Tracker::instance().init();
@@ -137,14 +114,6 @@ void setup()
     // to location publishes
     Tracker::instance().location.regLocGenCallback(loc_gen_cb);
     
-    // Turn on 5V output on M8 connector
-    pinMode(CAN_PWR, OUTPUT);
-    digitalWrite(CAN_PWR, HIGH);
-    delay(500);
-
-    sensor.begin();
-    sensor.start_periodic();
-
     environment_init();
 }
 

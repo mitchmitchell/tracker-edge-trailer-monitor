@@ -17,7 +17,7 @@
 #include <atomic>
 #include "environment.h"
 #include "tracker_sleep.h"
-
+#include "sht3x-i2c.h"
 
 // Configuration based on external temperature and humidity sensor
 SensorConfig _sensorConfig = {
@@ -84,6 +84,8 @@ enum class EnvState {
   INSIDE_LIMIT,   //< Value is inside of the give limit and is pending a pass through the hysteresis limit
 };
 
+Sht3xi2c sensor(Wire3);
+
 int environment_init() {
 
   static ConfigObject _envConfigObject
@@ -108,6 +110,15 @@ int environment_init() {
   );
 
   CHECK(ConfigService::instance().registerModule(_envConfigObject));
+
+    
+  // Turn on 5V output on M8 connector
+  pinMode(CAN_PWR, OUTPUT);
+  digitalWrite(CAN_PWR, HIGH);
+  delay(500);
+
+  sensor.begin();
+  sensor.start_periodic();
 
   return SYSTEM_ERROR_NONE;
 }
@@ -302,6 +313,27 @@ void evaluate_user_environment(Environment environment) {
     }
   }
 
+}
+
+Environment get_environment() {
+    static Environment results = {-476.0l,-1.0l};
+    static uint32_t update_loop_sec = 0;
+
+    //don't poll the sensor too often
+    if((System.uptime() - update_loop_sec) >= 2) {
+        double temp, humid;
+        int err = sensor.get_reading(&temp, &humid);
+        if (err == 0)
+        {
+            Log.info("temp=%.2lf hum=%.2lf", temp, humid);
+            results = { temp, humid };
+        }
+        else {
+            Log.info("no sensor err=%d", err);
+        }
+        update_loop_sec = System.uptime();
+    }
+    return results;
 }
 
 int environment_tick() {

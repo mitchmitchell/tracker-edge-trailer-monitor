@@ -19,6 +19,7 @@
 #include "Particle.h"
 #include "tracker_config.h"
 #include "config_service.h"
+#include "TemperatureHumidityValidatorRK.h"
 
 struct SensorConfig {
   float minTemperature;                 /**< Minumum temperature that can be measured with sensor. */

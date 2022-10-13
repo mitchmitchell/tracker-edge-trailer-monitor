@@ -85,6 +85,7 @@ enum class EnvState {
 };
 
 Sht3xi2c sensor(Wire3);
+TemperatureHumidityValidator Validator;
 
 int environment_init() {
 
@@ -326,6 +327,7 @@ Environment get_environment() {
         if (err == 0)
         {
             Log.info("temp=%.2lf hum=%.2lf", temp, humid);
+            Validator.addSample(temp, humid);
             results = { temp, humid };
         }
         else {

@@ -42,10 +42,10 @@ SerialLogHandler logHandler(115200, LOG_LEVEL_TRACE, {
 
 void loc_gen_cb(JSONWriter &writer, LocationPoint &point, const void *context)
 {
-    Environment env = get_environment();
+    extern TemperatureHumidityValidator Validator;
     
-    writer.name("env_t").value(env.Temperature);
-    writer.name("env_h").value(env.Humidity);
+    writer.name("env_t").value(Validator.getTemperatureC());
+    writer.name("env_h").value(Validator.getHumidity());
  
     int ps = System.powerSource();
 

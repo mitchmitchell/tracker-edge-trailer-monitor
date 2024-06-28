@@ -16,6 +16,10 @@
 
 #include "tracker_cellular.h"
 
+#if (PLATFORM_ID == PLATFORM_TRACKERM)
+    #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+#endif
+
 TrackerCellular *TrackerCellular::_instance = nullptr;
 
 TrackerCellular::TrackerCellular() : _signal_update(0), _thread(nullptr)
@@ -47,7 +51,7 @@ int TrackerCellular::parseServeCell(const char* in, CellularServing& out) {
         return SYSTEM_ERROR_NOT_ENOUGH_DATA;
     }
 
-    if (!strncmp(rat, "CAT-M", 5)) {
+    if (!strncmp(rat, "CAT-M", 5) || !strncmp(rat, "eMTC", 4)) {
         out.rat = RadioAccessTechnology::LTE_CAT_M1;
     }
     else if (!strncmp(rat, "LTE", 3)) {
@@ -90,7 +94,7 @@ int TrackerCellular::parseCell(const char* in, CellularNeighbor& out) {
         return SYSTEM_ERROR_NOT_ENOUGH_DATA;
     }
 
-    if (!strncmp(rat, "CAT-M", 5)) {
+    if (!strncmp(rat, "CAT-M", 5) || !strncmp(rat, "eMTC", 4)) {
         out.rat = RadioAccessTechnology::LTE_CAT_M1;
     }
     else if (!strncmp(rat, "LTE", 3)) {

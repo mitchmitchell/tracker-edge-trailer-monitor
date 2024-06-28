@@ -35,6 +35,10 @@
 #include "gnss_led.h"
 #include "temperature.h"
 #include "mcp_can.h"
+#ifdef TRACKER_USE_MEMFAULT
+#include "memfault.h"
+#endif // TRACKER_USE_MEMFAULT
+#include "IEdgePlatformConfiguration.h"
 
 //
 // Default configuration
@@ -284,6 +288,19 @@ class Tracker {
         }
 
         /**
+         * @brief Initializate device with given configuration for application setup()
+         *
+         * @param config Configuration for general tracker operation
+         * @retval SYSTEM_ERROR_NONE
+         */
+        int init(IEdgePlatformConfiguration *pConfig) {
+            CHECK_TRUE((pConfig != nullptr), SYSTEM_ERROR_INVALID_ARGUMENT);
+            _platformConfig = pConfig;
+            _commonCfgData = _platformConfig->get_common_config_data();
+            return init();
+        }
+
+        /**
          * @brief Perform device functionality for application loop()
          *
          */
@@ -429,9 +446,13 @@ class Tracker {
         int chargeCallback(TemperatureChargeEvent event);
 
         static Tracker* _instance;
-        //Memfault *_memfault {nullptr};
+    #ifdef TRACKER_USE_MEMFAULT
+        Memfault *_memfault {nullptr};
+    #endif // TRACKER_USE_MEMFAULT
         TrackerCloudConfig _cloudConfig;
         TrackerConfiguration _deviceConfig;
+        IEdgePlatformConfiguration *_platformConfig {nullptr};
+        EdgePlatformCommonConfiguration _commonCfgData;
 
         uint32_t _model;
         uint32_t _variant;

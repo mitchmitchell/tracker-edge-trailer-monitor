@@ -15,7 +15,6 @@
  */
 
 #include "Particle.h"
-
 #include "tracker_config.h"
 #include "tracker.h"
 #include "environment.h"

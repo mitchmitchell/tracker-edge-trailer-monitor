@@ -78,117 +78,42 @@ void LocationPublish::tick() {
                 CloudServicePublishFlags::FULL_ACK : CloudServicePublishFlags::NONE;
 
         auto size = store_msg_queue.peekFrontSize();
+        if (size > particle::protocol::MAX_EVENT_DATA_LENGTH) {
+            Log.warn("Disk queue file size exceeds maximum message length; truncating");
+            size = particle::protocol::MAX_EVENT_DATA_LENGTH;
+        }
         store_msg_queue.peekFront(store_msg_buffer, size);
         store_msg_queue.popFront(); //ok to pop, disk_queue_cb will throw it back
         //on if it fails again and there's space in the disk queue
 
+        store_msg_buffer[size] = '\0'; // file data are not null terminated, but CloudService::send expects it
+
         //Priority level set to normal. don't want these to be high priority
         regPendingLocPubCallback(); //use the pending callback for this since
         //the exchange between pending vs the current hasn't occured yet
-        auto send_rval =
-            CloudService::instance().send((const char*)store_msg_buffer,
-                WITH_ACK,
-                cloud_flags,
-                &LocationPublish::loc_store_cb_wrapper,
-                this,
-                CLOUD_DEFAULT_TIMEOUT_MS, nullptr, "loc", 0, 1);
-        if(send_rval) {
-            Tracker::instance().location.
-                issue_location_publish_callbacks(CloudServiceStatus::FAILURE,
-                                                nullptr,
-                                                (const char*)store_msg_buffer);
-        }
+        CloudService::instance().send((const char*)store_msg_buffer,
+            WITH_ACK,
+            cloud_flags,
+            std::bind(&TrackerLocation::location_publish_cb, &TrackerLocation::instance(),
+                std::placeholders::_1, std::placeholders::_2, System.uptime()),
+            CLOUD_DEFAULT_TIMEOUT_MS, "loc", 0, 1);
     }
-}
-
-bool LocationPublish::publish(const char *name,
-                            const char *data,
-                            PublishFlags flags,
-                            int level,
-                            const void *context) {
-
-    //copy name and data to heap location
-    char* event_name = new char[strlen(name)+1]; //+1 for null terminator
-    strcpy((char*)event_name, name);
-
-    char* event_data = new char[strlen(data)+1]; //+1 for null terminator
-    strcpy((char*)event_data, data);
-
-    return BackgroundPublish::instance().publish(event_name,
-                                                event_data,
-                                                flags,
-                                                level,
-                                                &LocationPublish::publish_cb,
-                                                this,
-                                                context);
-}
-
-void LocationPublish::publish_cb(publishStatus status,
-                        const char *event_name,
-                        const char *event_data,
-                        const void *event_context) {
-    if(!event_context) {
-        return;
-    }
-
-    //delete event_name, not used anywhere else after this
-    //delete event_data, not used anywhere else since event_context is allocated
-    //from the heap and contains a String copy of event_data. The event_context
-    //is deleted later in the CloudService::send_cb_wrapper() function
-    delete[] event_name;
-    delete[] event_data;
-
-    auto send_handler {static_cast<const cloud_service_send_handler_t *>(event_context)};
-    auto &base_handler {send_handler->base_handler};
-
-    if(status == publishStatus::PUBLISH_COMPLETE) {
-        if(base_handler.cloud_flags & CloudServicePublishFlags::FULL_ACK) {
-            // expecting full end-to-end acknowledgement so set up handler waiting for the ACK
-            CloudService::instance().regCommandCallback(base_handler.cmd,
-                                                        base_handler.cb,
-                                                        base_handler.req_id,
-                                                        base_handler.timeout_ms,
-                                                        base_handler.context);
-        }
-        else {
-            cloud_service_handler_t handler {base_handler};
-            handler.status = CloudServiceStatus::SUCCESS;
-            CloudService::instance().regCommandDeferredCallback(handler);
-        }
-    }
-    else if (status == publishStatus::PUBLISH_BUSY) {
-        cloud_service_handler_t handler {base_handler};
-        handler.status = CloudServiceStatus::FAILURE;
-        CloudService::instance().regCommandDeferredCallback(handler);
-    }
-}
-
-int LocationPublish::loc_store_cb_wrapper(CloudServiceStatus status,
-                                        JSONValue *rsp_root,
-                                        const char *req_event,
-                                        const void *context) {
-    return TrackerLocation::instance().location_publish_cb(status,
-                                                    rsp_root,
-                                                    req_event,
-                                                    context);
 }
 
 void LocationPublish::regLocPubCallback() {
     Tracker::instance().location.regLocPubCallback(&LocationPublish::disk_queue_cb,
-                                                this);
+                                                   this);
 }
 
 void LocationPublish::regPendingLocPubCallback() {
     Tracker::instance().location.regPendLocPubCallback(&LocationPublish::disk_queue_cb,
-                                                this);
+                                                       this);
 }
 
 int LocationPublish::disk_queue_cb(CloudServiceStatus status,
-                                    JSONValue * rsp_root,
-                                    const char * req_event,
-                                    const void *context) {
-    if(req_event && (status != SUCCESS) && store_config.enable) {
-        if(!store_msg_queue.pushBack((const uint8_t*)req_event, strlen(req_event)+1)) {
+                                   const String &req_event) {
+    if((SUCCESS != status) && store_config.enable) {
+        if(!store_msg_queue.pushBack(req_event)) {
             Log.warn("Unable to write location message to DiskQueue, discarding");
         }
     }

@@ -15,7 +15,8 @@
  */
 
 #pragma once
-
+#define NUM_GSV_TYPES   6
+#define NUM_SAT_BANDS   2
 #include "Particle.h"
 
 #include "ubloxGPS.h"

@@ -106,6 +106,21 @@ void envState()
     }
 }
 
+int remoteControlMotionDetection(String action)
+{
+    if (action == "enable") {
+        MotionService::instance().enableMotionDetection(MotionDetectionMode::HIGH_SENSITIVITY);
+        return 1;
+    }
+    else if (action == "disable")
+    {
+        MotionService::instance().disableMotionDetection();
+        return 0;
+    }
+    else
+        return -1;
+}
+
 void setup()
 {
     Tracker::instance().init();
@@ -113,7 +128,7 @@ void setup()
     // Register a location callback so we can add temperature and humidity information
     // to location publishes
     Tracker::instance().location.regLocGenCallback(loc_gen_cb);
-    
+    Particle.function("motionControl", remoteControlMotionDetection);
     environment_init();
 }
 

@@ -105,7 +105,7 @@ Tracker::Tracker() :
 }
 
 void Tracker::collectMemfaultHeartbeatMetrics() {
-    memfault_metrics_heartbeat_set_unsigned(
+/*    memfault_metrics_heartbeat_set_unsigned(
         MEMFAULT_METRICS_KEY(Bat_Soc), (uint32_t)(System.batteryCharge() * TrackerMemfaultBatteryScaling));
 
     if (_model == TRACKER_MODEL_TRACKERONE) {
@@ -117,6 +117,7 @@ void Tracker::collectMemfaultHeartbeatMetrics() {
         memfault_metrics_heartbeat_set_signed(
             MEMFAULT_METRICS_KEY(Tracker_TempC), (int32_t)(TrackerMemfaultTemperatureInvalid * TrackerMemfaultTemperatureScaling));
     }
+    */
 }
 
 int Tracker::registerConfig()
@@ -546,9 +547,9 @@ int Tracker::init()
     // Disable OTA updates until after the system handler has been registered
     System.disableUpdates();
 
-    if (nullptr == _memfault) {
-        _memfault = new Memfault(TRACKER_PRODUCT_VERSION);
-    }
+//    if (nullptr == _memfault) {
+//        _memfault = new Memfault(TRACKER_PRODUCT_VERSION);
+//    }
 
 #ifndef TRACKER_MODEL_NUMBER
     ret = hal_get_device_hw_model(&_model, &_variant, nullptr);
@@ -702,9 +703,9 @@ void Tracker::loop()
     // fast operations for every loop
     cloudService.tick();
     configService.tick();
-    if (_deviceMonitoring && (nullptr != _memfault)) {
-        _memfault->process();
-    }
+//    if (_deviceMonitoring && (nullptr != _memfault)) {
+//        _memfault->process();
+//    }
     location.loop();
 }
 
